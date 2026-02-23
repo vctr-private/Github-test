@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Quiz</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  color: #333;
+}
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.header {
+  text-align: center;
+  color: #fff;
+  padding: 30px 20px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.header .meta {
+  font-size: 14px;
+  opacity: 0.9;
+}
+.progress-bar {
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+  height: 8px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+.progress-fill {
+  background: #fff;
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease;
+  border-radius: 10px;
+}
+.question {
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  display: none;
+}
+.question.active { display: block; }
+.q-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #888;
+}
+.q-number { font-weight: 600; color: #667eea; }
+.q-text {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 25px;
+  color: #222;
+}
+.options { display: flex; flex-direction: column; gap: 12px; }
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 15px;
+  width: 100%;
+}
+.option:hover:not(.disabled) {
+  border-color: #667eea;
+  background: #f5f3ff;
+}
+.option.selected {
+  border-color: #667eea;
+  background: #ede9fe;
+}
+.option.correct {
+  border-color: #22c55e;
+  background: #dcfce7;
+}
+.option.incorrect {
+  border-color: #ef4444;
+  background: #fee2e2;
+}
+.option.disabled { cursor: default; opacity: 0.7; }
+.option.show-correct {
+  border-color: #22c55e;
+  background: #dcfce7;
+  opacity: 1;
+}
+.opt-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8e8e8;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.option.selected .opt-label { background: #667eea; color: #fff; }
+.option.correct .opt-label { background: #22c55e; color: #fff; }
+.option.incorrect .opt-label { background: #ef4444; color: #fff; }
+.opt-text { padding-top: 5px; line-height: 1.5; }
+.feedback {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.feedback.correct { background: #dcfce7; color: #166534; }
+.feedback.incorrect { background: #fee2e2; color: #991b1b; }
+.feedback strong { display: block; margin-bottom: 6px; font-size: 15px; }
+.next-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+.hidden { display: none !important; }
+.results {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  display: none;
+}
+.results.active { display: block; }
+.results h2 { font-size: 28px; margin-bottom: 10px; color: #333; }
+.results .score { font-size: 64px; font-weight: 700; color: #667eea; margin: 20px 0; }
+.results .score-text { font-size: 18px; color: #666; margin-bottom: 30px; }
+.restart-btn {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Math CSS */
+.math, .math-block { font-family: "Times New Roman", Times, serif; font-style: italic; }
+.math-block { display: block; text-align: center; margin: 10px 0; font-size: 110%; }
+.frac { 
+  display: inline-flex; 
+  flex-direction: column; 
+  align-items: center; 
+  vertical-align: middle; 
+  margin: 0 3px;
+  font-size: 0.9em;
+}
+.frac-num { 
+  border-bottom: 1px solid currentColor; 
+  padding: 0 4px 2px; 
+  line-height: 1.2;
+}
+.frac-den { 
+  padding: 2px 4px 0; 
+  line-height: 1.2;
+}
+.sqrt { white-space: nowrap; }
+.sqrt-content { 
+  border-top: 1px solid currentColor; 
+  padding: 0 3px;
+  margin-left: 2px;
+}
+sup, sub { font-size: 0.75em; }
+sup { vertical-align: super; }
+sub { vertical-align: sub; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>English Quiz</h1>
+    <div class="meta">12 questions</div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+  </div>
+  
+  <div id="quiz-container">
+    
+        <div class="question" data-index="0">
+          <div class="q-header">
+            <span class="q-number">Question 1</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">In English pronunciation, how is the letter 'H' at the beginning of a word like 'House' usually produced?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="In English, initial 'H' is almost always audible, unlike in languages like Portuguese or French.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">It is silent, similar to its use in many Latin-based languages.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The source material defines the 'H' sound as a soft, breathed sound, similar to a sigh or a puff of air.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">It is aspirated, sounding like a soft puff of air or a sigh.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="A hard 'G' is a voiced plosive, which is distinct from the unvoiced breathy sound of 'H'.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">It sounds like a hard 'G' sound produced at the back of the throat.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Rolling sounds are characteristic of the letter 'R' in some languages, but never 'H' in English.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">It is rolled at the tip of the tongue.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="1">
+          <div class="q-header">
+            <span class="q-number">Question 2</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">According to the 'English Path' methodology, what is the main rule for understanding the meaning of a compound word like 'bookshelf'?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="In English compound words, the first word usually acts as a descriptor rather than the main category.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">The first word always defines the primary category of the object.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The material explains that the last word is the most important as it tells you the general 'type' of the item.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">The last word represents the main category or type of object.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Translating literally from left to right often confuses the relationship between the descriptor and the object in English.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">You must translate the word from left to right to understand its function.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="English compound rules focus on the relationship between the final headword and its preceding modifiers.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">The word in the middle is the most significant if it has three parts.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="2">
+          <div class="q-header">
+            <span class="q-number">Question 3</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">Which of the following is the correct way to write the ordinal number for <span class="math">20</span> in English?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Numbers ending in 'y' change the 'y' to 'ie' before adding the 'th' suffix for ordinals.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Twentieth</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="This is a common misspelling that fails to follow the rule for numbers ending in 'y'.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Twentyth</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="This option omits the necessary 'e' required in the spelling transformation from cardinal to ordinal.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Twentith</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="The suffix 'st' is reserved specifically for the number one and its compounds like twenty-first.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Twentyst</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="3">
+          <div class="q-header">
+            <span class="q-number">Question 4</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">If you are following the British format (UK) used in the workbook, how would you write the date 'December 25, 2024'?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="This is the American format (Month-Day-Year), whereas the UK uses Day-Month-Year.">
+          <span class="opt-label">A</span>
+          <span class="opt-text"><span class="math">12/25/2024</span></span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The UK standard for dates is Day-Month-Year, as highlighted in the source's 'Dica!' section.">
+          <span class="opt-label">B</span>
+          <span class="opt-text"><span class="math">25</span> December <span class="math">2024</span></span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="While understandable, this is not the standard written shorthand format mentioned for the UK.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">December the <span class="math">25<sup>th</sup></span> of <span class="math">2024</span></span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="This format puts the year first, which is used in technical filing but not the standard UK conversational format.">
+          <span class="opt-label">D</span>
+          <span class="opt-text"><span class="math">2024</span> December <span class="math">25</span></span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="4">
+          <div class="q-header">
+            <span class="q-number">Question 5</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">When describing feelings or physical states in English, such as hunger, which structure is grammatically correct?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="This is a literal translation from languages like Portuguese ('tenho fome'), but 'hungry' is an adjective in English.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">I have hungry.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="English treats feelings like hunger and thirst as states of being, requiring the verb 'to be'.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">I am hungry.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="This lacks the necessary auxiliary verb required to link the subject to the state of being.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">I hungry.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="The verb 'do' is an action verb or auxiliary for emphasis/negation, not for describing states of being.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">I do hungry.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="5">
+          <div class="q-header">
+            <span class="q-number">Question 6</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">Which title of address is considered neutral because it does not indicate a woman's marital status?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="Traditionally, 'Mrs.' is used specifically for married women.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Mrs.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="This title is traditionally used for unmarried women or young girls.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Miss</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="true" data-rationale="The source identifies 'Ms.' as the neutral title for women, independent of whether they are married or single.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Ms.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="While respectful, this is a form of direct address rather than a title used with a surname.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Madam</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="6">
+          <div class="q-header">
+            <span class="q-number">Question 7</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">What is the correct way to express the fraction <span class="math"><span class="frac"><span class="frac-num">3</span><span class="frac-den">4</span></span></span> in English, according to the workbook?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="English fractions are formed using a cardinal number for the numerator and an ordinal number for the denominator.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Three fourths</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="The denominator must be an ordinal number (showing position), not a cardinal number.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Three fours</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="The ordinal number belongs in the second position (denominator), not the first.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Third four</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="While mathematically descriptive, this is not the standard way to name a fraction in English.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Three of four</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="7">
+          <div class="q-header">
+            <span class="q-number">Question 8</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">Which possessive adjective should you use when talking about something that belongs to a group of people that includes yourself?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="'Their' refers to a third-party group that does not include the speaker.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Their</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="'Our' is the possessive adjective for 'we', representing the speaker and others.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Our</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="'Your' is used when addressing the listener or a group of listeners.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Your</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="'Us' is an object pronoun, not a possessive adjective used to describe ownership.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Us</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="8">
+          <div class="q-header">
+            <span class="q-number">Question 9</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">In the context of nationalities, what suffix is most commonly added to the name of countries ending in '-a', '-o', or '-e' (like Brazil or Mexico)?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="This suffix is more typical for countries like Spain (Spanish) or the UK (British).">
+          <span class="opt-label">A</span>
+          <span class="opt-text">-ish</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The source notes that countries ending in these vowels usually adopt the '-an' or '-ian' suffix.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">-an</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="This suffix is typically used for many Asian countries and some exceptions like Portugal.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">-ese</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="This suffix is commonly associated with countries like Iraq or Israel.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">-i</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="9">
+          <div class="q-header">
+            <span class="q-number">Question 10</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">How is the 'Schwa' sound <span class="math">(∂)</span> described in the English Path workbook?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="The Schwa is specifically a relaxed, unstressed sound, never an emphasized one.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">A very loud and emphasized vowel sound used at the end of sentences.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The material identifies the Schwa as a relaxed sound found in words like 'sofa' or 'pencil'.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">The most common sound in English, representing a relaxed 'ê' sound in unstressed syllables.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="The Schwa is a phoneme (sound), not a letter, and it appears in many types of words, not just compounds.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">A silent letter that appears only in compound words.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Placing the tongue between the teeth is the technique for the 'TH' sound, not the Schwa.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">A vibrant sound produced by placing the tongue between the teeth.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="10">
+          <div class="q-header">
+            <span class="q-number">Question 11</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">What happens to the pronunciation of a vowel when there is a 'silent E' at the end of a word, such as in 'cake' or 'make'?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="Short sounds are usually found in closed syllables without a silent 'e', like 'cat' or 'sit'.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">The preceding vowel becomes short and strong.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The source explains that the 'e' mudo (silent e) causes the previous vowel to have a long, 'soft' sound.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">The preceding vowel becomes long and sounds like the name of the letter.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="The vowel remains audible; its quality simply changes from short to long.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">The preceding vowel becomes silent as well.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="English pronunciation rules for vowels differ significantly from Portuguese phonetics.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">The word is pronounced exactly as it is written in Portuguese.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="11">
+          <div class="q-header">
+            <span class="q-number">Question 12</span>
+            <span class="q-of">of 12</span>
+          </div>
+          <div class="q-text">When expressing an amount of money like <span class="math">€12.75</span> in English conversation, what is the most natural way to say it?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="false" data-rationale="While correct, the source specifically highlights a more common, shortened conversational version.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Twelve euros and seventy-five cents</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="true" data-rationale="The workbook provides this exact phrasing as the standard way to state currency values with decimals.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Twelve euros seventy-five</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Currency is always stated with the larger unit (euros/dollars) before the smaller unit (cents).">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Seventy-five cents and twelve euros</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="In English, the currency name usually follows the whole number or is omitted if obvious, but not placed at the very end of the decimal string.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Twelve seventy-five euros</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+  </div>
+  
+  <div class="results" id="results">
+    <h2>Quiz Complete!</h2>
+    <div class="score" id="score">0%</div>
+    <div class="score-text" id="score-text">You got 0 out of 12 correct</div>
+    <button class="restart-btn" onclick="restart()">Try Again</button>
+  </div>
+</div>
+
+<script>
+const quizData = [{"question":"In English pronunciation, how is the letter 'H' at the beginning of a word like 'House' usually produced?","options":[{"label":"A","text":"It is silent, similar to its use in many Latin-based languages.","isCorrect":false,"rationale":"In English, initial 'H' is almost always audible, unlike in languages like Portuguese or French."},{"label":"B","text":"It is aspirated, sounding like a soft puff of air or a sigh.","isCorrect":true,"rationale":"The source material defines the 'H' sound as a soft, breathed sound, similar to a sigh or a puff of air."},{"label":"C","text":"It sounds like a hard 'G' sound produced at the back of the throat.","isCorrect":false,"rationale":"A hard 'G' is a voiced plosive, which is distinct from the unvoiced breathy sound of 'H'."},{"label":"D","text":"It is rolled at the tip of the tongue.","isCorrect":false,"rationale":"Rolling sounds are characteristic of the letter 'R' in some languages, but never 'H' in English."}]},{"question":"According to the 'English Path' methodology, what is the main rule for understanding the meaning of a compound word like 'bookshelf'?","options":[{"label":"A","text":"The first word always defines the primary category of the object.","isCorrect":false,"rationale":"In English compound words, the first word usually acts as a descriptor rather than the main category."},{"label":"B","text":"The last word represents the main category or type of object.","isCorrect":true,"rationale":"The material explains that the last word is the most important as it tells you the general 'type' of the item."},{"label":"C","text":"You must translate the word from left to right to understand its function.","isCorrect":false,"rationale":"Translating literally from left to right often confuses the relationship between the descriptor and the object in English."},{"label":"D","text":"The word in the middle is the most significant if it has three parts.","isCorrect":false,"rationale":"English compound rules focus on the relationship between the final headword and its preceding modifiers."}]},{"question":"Which of the following is the correct way to write the ordinal number for $20$ in English?","options":[{"label":"A","text":"Twentieth","isCorrect":true,"rationale":"Numbers ending in 'y' change the 'y' to 'ie' before adding the 'th' suffix for ordinals."},{"label":"B","text":"Twentyth","isCorrect":false,"rationale":"This is a common misspelling that fails to follow the rule for numbers ending in 'y'."},{"label":"C","text":"Twentith","isCorrect":false,"rationale":"This option omits the necessary 'e' required in the spelling transformation from cardinal to ordinal."},{"label":"D","text":"Twentyst","isCorrect":false,"rationale":"The suffix 'st' is reserved specifically for the number one and its compounds like twenty-first."}]},{"question":"If you are following the British format (UK) used in the workbook, how would you write the date 'December 25, 2024'?","options":[{"label":"A","text":"$12/25/2024$","isCorrect":false,"rationale":"This is the American format (Month-Day-Year), whereas the UK uses Day-Month-Year."},{"label":"B","text":"$25$ December $2024$","isCorrect":true,"rationale":"The UK standard for dates is Day-Month-Year, as highlighted in the source's 'Dica!' section."},{"label":"C","text":"December the $25^{th}$ of $2024$","isCorrect":false,"rationale":"While understandable, this is not the standard written shorthand format mentioned for the UK."},{"label":"D","text":"$2024$ December $25$","isCorrect":false,"rationale":"This format puts the year first, which is used in technical filing but not the standard UK conversational format."}]},{"question":"When describing feelings or physical states in English, such as hunger, which structure is grammatically correct?","options":[{"label":"A","text":"I have hungry.","isCorrect":false,"rationale":"This is a literal translation from languages like Portuguese ('tenho fome'), but 'hungry' is an adjective in English."},{"label":"B","text":"I am hungry.","isCorrect":true,"rationale":"English treats feelings like hunger and thirst as states of being, requiring the verb 'to be'."},{"label":"C","text":"I hungry.","isCorrect":false,"rationale":"This lacks the necessary auxiliary verb required to link the subject to the state of being."},{"label":"D","text":"I do hungry.","isCorrect":false,"rationale":"The verb 'do' is an action verb or auxiliary for emphasis/negation, not for describing states of being."}]},{"question":"Which title of address is considered neutral because it does not indicate a woman's marital status?","options":[{"label":"A","text":"Mrs.","isCorrect":false,"rationale":"Traditionally, 'Mrs.' is used specifically for married women."},{"label":"B","text":"Miss","isCorrect":false,"rationale":"This title is traditionally used for unmarried women or young girls."},{"label":"C","text":"Ms.","isCorrect":true,"rationale":"The source identifies 'Ms.' as the neutral title for women, independent of whether they are married or single."},{"label":"D","text":"Madam","isCorrect":false,"rationale":"While respectful, this is a form of direct address rather than a title used with a surname."}]},{"question":"What is the correct way to express the fraction $\\frac{3}{4}$ in English, according to the workbook?","options":[{"label":"A","text":"Three fourths","isCorrect":true,"rationale":"English fractions are formed using a cardinal number for the numerator and an ordinal number for the denominator."},{"label":"B","text":"Three fours","isCorrect":false,"rationale":"The denominator must be an ordinal number (showing position), not a cardinal number."},{"label":"C","text":"Third four","isCorrect":false,"rationale":"The ordinal number belongs in the second position (denominator), not the first."},{"label":"D","text":"Three of four","isCorrect":false,"rationale":"While mathematically descriptive, this is not the standard way to name a fraction in English."}]},{"question":"Which possessive adjective should you use when talking about something that belongs to a group of people that includes yourself?","options":[{"label":"A","text":"Their","isCorrect":false,"rationale":"'Their' refers to a third-party group that does not include the speaker."},{"label":"B","text":"Our","isCorrect":true,"rationale":"'Our' is the possessive adjective for 'we', representing the speaker and others."},{"label":"C","text":"Your","isCorrect":false,"rationale":"'Your' is used when addressing the listener or a group of listeners."},{"label":"D","text":"Us","isCorrect":false,"rationale":"'Us' is an object pronoun, not a possessive adjective used to describe ownership."}]},{"question":"In the context of nationalities, what suffix is most commonly added to the name of countries ending in '-a', '-o', or '-e' (like Brazil or Mexico)?","options":[{"label":"A","text":"-ish","isCorrect":false,"rationale":"This suffix is more typical for countries like Spain (Spanish) or the UK (British)."},{"label":"B","text":"-an","isCorrect":true,"rationale":"The source notes that countries ending in these vowels usually adopt the '-an' or '-ian' suffix."},{"label":"C","text":"-ese","isCorrect":false,"rationale":"This suffix is typically used for many Asian countries and some exceptions like Portugal."},{"label":"D","text":"-i","isCorrect":false,"rationale":"This suffix is commonly associated with countries like Iraq or Israel."}]},{"question":"How is the 'Schwa' sound $(\\partial)$ described in the English Path workbook?","options":[{"label":"A","text":"A very loud and emphasized vowel sound used at the end of sentences.","isCorrect":false,"rationale":"The Schwa is specifically a relaxed, unstressed sound, never an emphasized one."},{"label":"B","text":"The most common sound in English, representing a relaxed 'ê' sound in unstressed syllables.","isCorrect":true,"rationale":"The material identifies the Schwa as a relaxed sound found in words like 'sofa' or 'pencil'."},{"label":"C","text":"A silent letter that appears only in compound words.","isCorrect":false,"rationale":"The Schwa is a phoneme (sound), not a letter, and it appears in many types of words, not just compounds."},{"label":"D","text":"A vibrant sound produced by placing the tongue between the teeth.","isCorrect":false,"rationale":"Placing the tongue between the teeth is the technique for the 'TH' sound, not the Schwa."}]},{"question":"What happens to the pronunciation of a vowel when there is a 'silent E' at the end of a word, such as in 'cake' or 'make'?","options":[{"label":"A","text":"The preceding vowel becomes short and strong.","isCorrect":false,"rationale":"Short sounds are usually found in closed syllables without a silent 'e', like 'cat' or 'sit'."},{"label":"B","text":"The preceding vowel becomes long and sounds like the name of the letter.","isCorrect":true,"rationale":"The source explains that the 'e' mudo (silent e) causes the previous vowel to have a long, 'soft' sound."},{"label":"C","text":"The preceding vowel becomes silent as well.","isCorrect":false,"rationale":"The vowel remains audible; its quality simply changes from short to long."},{"label":"D","text":"The word is pronounced exactly as it is written in Portuguese.","isCorrect":false,"rationale":"English pronunciation rules for vowels differ significantly from Portuguese phonetics."}]},{"question":"When expressing an amount of money like $€12.75$ in English conversation, what is the most natural way to say it?","options":[{"label":"A","text":"Twelve euros and seventy-five cents","isCorrect":false,"rationale":"While correct, the source specifically highlights a more common, shortened conversational version."},{"label":"B","text":"Twelve euros seventy-five","isCorrect":true,"rationale":"The workbook provides this exact phrasing as the standard way to state currency values with decimals."},{"label":"C","text":"Seventy-five cents and twelve euros","isCorrect":false,"rationale":"Currency is always stated with the larger unit (euros/dollars) before the smaller unit (cents)."},{"label":"D","text":"Twelve seventy-five euros","isCorrect":false,"rationale":"In English, the currency name usually follows the whole number or is omitted if obvious, but not placed at the very end of the decimal string."}]}];
+let currentQ = 0;
+let correctCount = 0;
+let answered = false;
+
+function init() {
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === 0);
+  });
+  updateProgress();
+  
+  document.querySelectorAll('.option').forEach(opt => {
+    opt.addEventListener('click', () => selectOption(opt));
+  });
+  
+  document.querySelectorAll('.next-btn').forEach(btn => {
+    btn.addEventListener('click', nextQuestion);
+  });
+}
+
+function selectOption(opt) {
+  if (answered) return;
+  answered = true;
+  
+  const q = opt.closest('.question');
+  const options = q.querySelectorAll('.option');
+  const feedback = q.querySelector('.feedback');
+  const nextBtn = q.querySelector('.next-btn');
+  const isCorrect = opt.dataset.correct === 'true';
+  const rationale = opt.dataset.rationale;
+  
+  options.forEach(o => {
+    o.classList.add('disabled');
+    if (o.dataset.correct === 'true') o.classList.add('show-correct');
+  });
+  
+  opt.classList.add('selected');
+  opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+  
+  if (isCorrect) {
+    correctCount++;
+    feedback.className = 'feedback correct';
+    feedback.innerHTML = '<strong>✓ Correct!</strong>' + (rationale ? rationale : '');
+  } else {
+    feedback.className = 'feedback incorrect';
+    const correctOpt = [...options].find(o => o.dataset.correct === 'true');
+    const correctRationale = correctOpt ? correctOpt.dataset.rationale : '';
+    feedback.innerHTML = '<strong>✗ Incorrect</strong>' + (correctRationale ? correctRationale : '');
+  }
+  
+  nextBtn.classList.remove('hidden');
+  if (currentQ === quizData.length - 1) {
+    nextBtn.textContent = 'See Results';
+  }
+}
+
+function nextQuestion() {
+  answered = false;
+  currentQ++;
+  
+  if (currentQ >= quizData.length) {
+    showResults();
+    return;
+  }
+  
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === currentQ);
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = ((currentQ) / quizData.length) * 100;
+  document.querySelector('.progress-fill').style.width = pct + '%';
+}
+
+function showResults() {
+  document.querySelectorAll('.question').forEach(q => q.classList.remove('active'));
+  const results = document.getElementById('results');
+  results.classList.add('active');
+  
+  const pct = Math.round((correctCount / quizData.length) * 100);
+  document.getElementById('score').textContent = pct + '%';
+  document.getElementById('score-text').textContent = 'You got ' + correctCount + ' out of ' + quizData.length + ' correct';
+  
+  document.querySelector('.progress-fill').style.width = '100%';
+}
+
+function restart() {
+  currentQ = 0;
+  correctCount = 0;
+  answered = false;
+  
+  document.getElementById('results').classList.remove('active');
+  
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === 0);
+    q.querySelectorAll('.option').forEach(o => {
+      o.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'show-correct');
+    });
+    q.querySelector('.feedback').className = 'feedback hidden';
+    q.querySelector('.next-btn').classList.add('hidden');
+    q.querySelector('.next-btn').textContent = 'Next Question →';
+  });
+  
+  updateProgress();
+}
+
+init();
+</script>
+</body>
+</html>
